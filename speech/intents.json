@@ -1,0 +1,17 @@
+{
+  "intents": [
+    {
+      "intent": "GetStatePensionDate",
+      "slots": [
+        {
+          "name": "Gender",
+          "type": "LIST_OF_GENDERS"
+        },
+        {
+          "name": "DateOfBirth",
+          "type": "AMAZON.DATE"
+        }
+      ]
+    }
+  ]
+}
