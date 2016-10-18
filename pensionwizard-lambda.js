@@ -1,35 +1,46 @@
 var http = require("http");
-exports.buildSpeechletResponse  = (outputText, shouldEndSession) => {
-        console.log('building speechlet response with ',outputText)
+/*
+var buildSpeechletResponse  = (outputText, shouldEndSession) => {
+  return {
+    outputSpeech: {
+      type: "PlainText",
+      text: outputText
+    },
+    shouldEndSession: shouldEndSession
+  }
+}
 
-      return {
-        outputSpeech: {
-          type: "PlainText",
-          text: outputText
-        },
-        shouldEndSession: shouldEndSession
-      }
-
-    }
-
-exports.generateResponse = (speechletResponse, sessionAttributes) => {
-
+var generateResponse = (speechletResponse, sessionAttributes) => {
       return {
         version: "1.0",
         sessionAttributes: sessionAttributes,
-        response: speechletResponse
+        response: {
+          outputSpeech: {
+            type: "PlainText",
+            text: speechletResponse
+          },
+          shouldEndSession: shouldEndSession
+        }
       }
     }
-
-exports.respond = function(context, responsePhrase,sessionAttributes, endConversationFlag ){
-  context.succeed(exports.generateResponse(
-    exports.buildSpeechletResponse(responsePhrase,endConversationFlag),
-          sessionAttributes
-    )
+*/
+var respond = (context, responsePhrase,sessionAttributes, endConversationFlag ) => {
+  context.succeed(
+      {
+        version: "1.0",
+        sessionAttributes: sessionAttributes,
+        response: {
+          outputSpeech: {
+            type: "PlainText",
+            text: responsePhrase
+          },
+          shouldEndSession: endConversationFlag
+        }
+      },sessionAttributes
   );
 }
 
-exports.calculateStatePensionAge = (dob, gender, callback) => {
+var calculateStatePensionAge = (dob, gender, callback) => {
 	console.log('dob received as: '+dob);
 
 	var postData = JSON.stringify({
@@ -77,9 +88,10 @@ exports.handler = (event,context) => {
     "DateOfBirth": null,
     "Gender": null
   }
+  console.log('event', event)
   dobObj = event.request.intent.slots.DateOfBirth.value
   if (dobObj){
-    convoObject.DateOfBirth=dobObj
+    convoObject.DateOfBirth=""+dobObj
   }
 
   console.log('Date of birth found :' +dobObj)
@@ -94,8 +106,8 @@ exports.handler = (event,context) => {
 			// launch request
 			case "LaunchRequest":
 				context.succeed(
-					this.generateResponse(
-						this.buildSpeechletResponse('Welcome to Pension Wizard, the advisor in your pocket',false),
+					generateResponse(
+						respond(context,'Welcome to Pension Wizard, the advisor in your pocket',{}, false),
 					{}
 					)
 				);
@@ -106,14 +118,14 @@ exports.handler = (event,context) => {
 			case "IntentRequest":
 				console.log('Intent Request');
         if(!convoObject.DateOfBirth){
-          exports.respond(
+          respond(
             context,
             "In order to calculate that, I need to ask a couple of quick questions. First of all, what's your date of birth?",
             {},
             false
           );
         }
-				this.calculateStatePensionAge(convoObject.DateOfBirth, function(response){
+				calculateStatePensionAge(convoObject.DateOfBirth, 'M', function(response){
 						var now = new Date();
 				    var retirementDate = new Date(JSON.parse(response).state_pension_date);
 						var diff = retirementDate - now;
@@ -124,9 +136,8 @@ exports.handler = (event,context) => {
 						months = months >=0 ? months : 0
 				    console.log(years);
 						console.log(months);
-					exports.respond(context, `You have ${years} years and ${months} months left until you can draw your state pension`,{}, true);
+					respond(context, `You have ${years} years and ${months} months left until you can draw your state pension`,{}, true);
 				});
-
 
 				break;
 			// session ended request
